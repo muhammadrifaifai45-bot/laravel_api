@@ -33,8 +33,15 @@ class ProductController extends Controller
         'nama'=>'required',
         'harga' => 'required',
         'stock' => 'required',
-        'deskripsi' => 'required'
+        'deskripsi' => 'required',
+        'gambar'=>'nullable||image'
       ]);
+     $gambar="";
+     if($request->hasFile("gambar")){
+        $gambar=time(). ".". 
+        $request->gambar->extensions();
+     }
+     
       $product=Product::create([
         'nama'=>$request->nama,
         'harga'=>$request->harga,
@@ -76,6 +83,14 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
+
+    //menambahkan validasi agar update berhasil dan tidak menampilkan pop up error
+    $request->validate([
+    'nama'=>'required',
+    'harga'=>'required',
+    'stock'=>'required',
+    'deskripsi'=>'required'
+]);
     $product=Product::find($id);
      if(!$product){
         return response()->json([
@@ -83,13 +98,15 @@ class ProductController extends Controller
             
         ],400);
      }
-       $product=Product::update([
-        'nama'=>$request->nama,
-        'harga'=>$request->harga,
-        'stock'=>$request->stock,
-        'deskripsi'=>$request->deskripsi,
-        'gambar'=>''
-      ]);
+
+    
+    $product->update([
+    'nama'=>$request->nama,
+    'harga'=>$request->harga,
+    'stock'=>$request->stock,
+    'deskripsi'=>$request->deskripsi,
+    'gambar'=>''
+]);
        return response()->json([
             'message'=>'Selamat Data telah berhasil di ubah',
             'data'=>$product
@@ -100,7 +117,7 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product $product, string $id)
+    public function destroy( string $id)
     {
         $product=Product::find($id);
      if(!$product){
@@ -112,6 +129,6 @@ class ProductController extends Controller
         $product->delete();
         return response()->json([
             'message'=>'data Berhasil di hapus, selamat dan terimakasih'
-        ]);
+        ],200);
     }
 }
