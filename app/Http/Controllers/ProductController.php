@@ -12,8 +12,10 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return response()->json(Product::latest()->get(),200);
-
+        return response()->json(
+            Product::latest()->get(),
+            200
+        );
     }
 
     /**
@@ -21,7 +23,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-      
+        //
     }
 
     /**
@@ -30,44 +32,53 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-        'nama'=>'required',
-        'harga' => 'required',
-        'stock' => 'required',
-        'deskripsi' => 'required',
-        'gambar'=>'nullable||image'
-      ]);
-     $gambar="";
-     if($request->hasFile("gambar")){
-        $gambar=time(). ".". 
-        $request->gambar->extensions();
-     }
-     
-      $product=Product::create([
-        'nama'=>$request->nama,
-        'harga'=>$request->harga,
-        'stock'=>$request->stock,
-        'deskripsi'=>$request->deskripsi,
-        'gambar'=>''
-      ]);
-       return response()->json([
-            'message'=>'Selamat Data telah berhasil di tambahkan',
-            'data'=>$product
-        ],201);
+            'nama' => 'required',
+            'harga' => 'required|numeric',
+            'stock' => 'required|integer',
+            'deskripsi' => 'required',
+            'gambar' => 'nullable|image|mimes;jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $gambar = null;
+
+        if ($request->hasFile('gambar')) {
+            $gambar = time() . '.' . $request->file('gambar')->extension();
+
+            $request->file('gambar')->storeAs(
+                'products',
+                $gambar,
+                'public'
+            );
+        }
+
+        $product = Product::create([
+            'nama' => $request->nama,
+            'harga' => $request->harga,
+            'stock' => $request->stock,
+            'deskripsi' => $request->deskripsi,
+            'gambar' => $gambar,
+        ]);
+
+        return response()->json([
+            'message' => 'Selamat Data telah berhasil di tambahkan',
+            'data' => $product
+        ], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(String $id)
+    public function show(string $id)
     {
-     $product=Product::find($id);
-     if(!$product){
-        return response()->json([
-            'message'=>'Data Tidak Ditemukan',
-            
-        ],400);
-     }
-     return response()->json($product,200);
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Data Tidak Ditemukan',
+            ], 404);
+        }
+
+        return response()->json($product, 200);
     }
 
     /**
@@ -83,52 +94,64 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
-
-    //menambahkan validasi agar update berhasil dan tidak menampilkan pop up error
-    $request->validate([
-    'nama'=>'required',
-    'harga'=>'required',
-    'stock'=>'required',
-    'deskripsi'=>'required'
-]);
-    $product=Product::find($id);
-     if(!$product){
-        return response()->json([
-            'message'=>'Data Tidak Ditemukan',
-            
-        ],400);
-     }
-
-    
-    $product->update([
-    'nama'=>$request->nama,
-    'harga'=>$request->harga,
-    'stock'=>$request->stock,
-    'deskripsi'=>$request->deskripsi,
-    'gambar'=>''
-]);
-       return response()->json([
-            'message'=>'Selamat Data telah berhasil di ubah',
-            'data'=>$product
+        $request->validate([
+            'nama' => 'required',
+            'harga' => 'required|numeric',
+            'stock' => 'required|integer',
+            'deskripsi' => 'required',
+            'gambar' => 'nullable|image',
         ]);
-       
+
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Data Tidak Ditemukan',
+            ], 404);
+        }
+
+        $product->nama = $request->nama;
+        $product->harga = $request->harga;
+        $product->stock = $request->stock;
+        $product->deskripsi = $request->deskripsi;
+
+        if ($request->hasFile('gambar')) {
+            $gambar = time() . '.' . $request->file('gambar')->extension();
+
+            $request->file('gambar')->storeAs(
+                'products',
+                $gambar,
+                'public'
+            );
+
+            $product->gambar = $gambar;
+        }
+
+        $product->save();
+
+        return response()->json([
+            'message' => 'Selamat Data telah berhasil di ubah',
+            'data' => $product
+        ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy( string $id)
+    public function destroy(string $id)
     {
-        $product=Product::find($id);
-     if(!$product){
-        return response()->json([
-            'message'=>'Data tidak ada atau tidak di temukan',
-            
-        ],404);
-     }
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Data tidak ada atau tidak di temukan',
+            ], 404);
+        }
+
         $product->delete();
+
         return response()->json([
-            'message'=>'data Berhasil di hapus, selamat dan terimakasih'
-        ],200);
+            'message' => 'data Berhasil di hapus, selamat dan terimakasih'
+        ], 200);
     }
 }
